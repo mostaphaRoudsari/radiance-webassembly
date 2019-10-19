@@ -1,2 +1,8 @@
 
 src/common/desktop.ini
+/src/build/javascript/CMakeCache.txt
+/src/build/javascript/Makefile
+/src/build/javascript/radiance.js
+/src/build/javascript/radiance.wasm
+/src/build/javascript/CMakeFiles
+/src/build/javascript/cmake_install.cmake
