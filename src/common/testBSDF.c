@@ -58,163 +58,163 @@ printXYZ(const char *intro, const SDValue *vp)
 			vp->spec.cy*vp->cieY);
 }
 
-int
-main(int argc, char *argv[])
-{
-	const char	*directory = NULL;
-	char		inp[512], path[512];
-	const SDData	*bsdf = NULL;
+// int
+// main(int argc, char *argv[])
+// {
+// 	const char	*directory = NULL;
+// 	char		inp[512], path[512];
+// 	const SDData	*bsdf = NULL;
 
-	if (argc > 2 || (argc == 2 && argv[1][0] == '-')) {
-		Usage(argv[0]);
-		return 1;
-	}
-	if (argc == 2)
-		directory = argv[1];
+// 	if (argc > 2 || (argc == 2 && argv[1][0] == '-')) {
+// 		Usage(argv[0]);
+// 		return 1;
+// 	}
+// 	if (argc == 2)
+// 		directory = argv[1];
 	
-	SDretainSet = SDretainBSDFs;		/* keep BSDFs in memory */
+// 	SDretainSet = SDretainBSDFs;		/* keep BSDFs in memory */
 
-						/* loop on command */
-	while (fgets(inp, sizeof(inp), stdin)) {
-		int	sflags = SDsampAll;
-		char	*cp = inp;
-		char	*cp2;
-		FVECT	vin, vout;
-		double	proja[2];
-		int	n, i;
-		SDValue	val;
+// 						/* loop on command */
+// 	while (fgets(inp, sizeof(inp), stdin)) {
+// 		int	sflags = SDsampAll;
+// 		char	*cp = inp;
+// 		char	*cp2;
+// 		FVECT	vin, vout;
+// 		double	proja[2];
+// 		int	n, i;
+// 		SDValue	val;
 		
-		while (isspace(*cp)) cp++;
+// 		while (isspace(*cp)) cp++;
 
-		switch (toupper(*cp)) {
-		case 'L':			/* load/activate BSDF input */
-			cp2 = cp = sskip2(cp, 1);
-			if (!*cp)
-				break;
-			while (*cp) cp++;
-			while (isspace(*--cp)) *cp = '\0';
-			if (directory)
-				sprintf(path, "%s/%s", directory, cp2);
-			else
-				strcpy(path, cp2);
-			if (bsdf)
-				SDfreeCache(bsdf);
-			bsdf = SDcacheFile(path);
-			continue;
-		case 'I':			/* report general info. */
-			if (!bsdf)
-				goto noBSDFerr;
-			printf("Material: '%s'\n", bsdf->matn);
-			printf("Manufacturer: '%s'\n", bsdf->makr);
-			printf("Width, Height, Thickness (m): %.4e, %.4e, %.4e\n",
-					bsdf->dim[0], bsdf->dim[1], bsdf->dim[2]);
-			if (bsdf->mgf)
-				printf("Has geometry: %lu bytes\n",
-						(unsigned long)strlen(bsdf->mgf));
-			else
-				printf("Has geometry: no\n");
-			break;
-		case 'C':			/* report constant values */
-			if (!bsdf)
-				goto noBSDFerr;
-			if (bsdf->rf)
-				printf("Peak front hemispherical reflectance: %.3e\n",
-						bsdf->rLambFront.cieY +
-						bsdf->rf->maxHemi);
-			if (bsdf->rb)
-				printf("Peak back hemispherical reflectance: %.3e\n",
-						bsdf->rLambBack.cieY +
-						bsdf->rb->maxHemi);
-			if (bsdf->tf)
-				printf("Peak front hemispherical transmittance: %.3e\n",
-						bsdf->tLamb.cieY + bsdf->tf->maxHemi);
-			if (bsdf->tb)
-				printf("Peak back hemispherical transmittance: %.3e\n",
-						bsdf->tLamb.cieY + bsdf->tb->maxHemi);
-			printXYZ("Diffuse Front Reflectance: ", &bsdf->rLambFront);
-			printXYZ("Diffuse Back Reflectance: ", &bsdf->rLambBack);
-			printXYZ("Diffuse Transmittance: ", &bsdf->tLamb);
-			break;
-		case 'Q':			/* query BSDF value */
-			if (!bsdf)
-				goto noBSDFerr;
-			if (!*sskip2(cp,4))
-				break;
-			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
-			vec_from_deg(vout, atof(sskip2(cp,3)), atof(sskip2(cp,4)));
-			if (!SDreportError(SDevalBSDF(&val, vout, vin, bsdf), stderr))
-				printXYZ("", &val);
-			break;
-		case 'S':			/* sample BSDF */
-			if (!bsdf)
-				goto noBSDFerr;
-			if (!*sskip2(cp,3))
-				break;
-			if (toupper(cp[1]) == 'R') {
-				sflags &= ~SDsampT;
-				++cp;
-			} else if (toupper(cp[1]) == 'T') {
-				sflags &= ~SDsampR;
-				++cp;
-			}
-			if (toupper(cp[1]) == 'S')
-				sflags &= ~SDsampDf;
-			else if (toupper(cp[1]) == 'D')
-				sflags &= ~SDsampSp;
-			i = n = atoi(sskip2(cp,1));
-			vec_from_deg(vin, atof(sskip2(cp,2)), atof(sskip2(cp,3)));
-			while (i-- > 0) {
-				VCOPY(vout, vin);
-				if (SDreportError(SDsampBSDF(&val, vout,
-						(i+rand()*(1./(RAND_MAX+.5)))/(double)n,
-						sflags, bsdf), stderr))
-					break;
-				printf("%.8f %.8f %.8f ", vout[0], vout[1], vout[2]);
-				printXYZ("", &val);
-			}
-			break;
-		case 'H':			/* hemispherical values */
-		case 'R':
-		case 'T':
-			if (!bsdf)
-				goto noBSDFerr;
-			if (!*sskip2(cp,2))
-				break;
-			if (toupper(cp[0]) == 'R')
-				sflags &= ~SDsampT;
-			else if (toupper(cp[0]) == 'T')
-				sflags &= ~SDsampR;
-			if (toupper(cp[1]) == 'S')
-				sflags &= ~SDsampDf;
-			else if (toupper(cp[1]) == 'D')
-				sflags &= ~SDsampSp;
-			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
-			printf("%.4e\n", SDdirectHemi(vin, sflags, bsdf));
-			break;
-		case 'A':			/* resolution in proj. steradians */
-			if (!bsdf)
-				goto noBSDFerr;
-			if (!*sskip2(cp,2))
-				break;
-			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
-			if (*sskip2(cp,4)) {
-				vec_from_deg(vout, atof(sskip2(cp,3)), atof(sskip2(cp,4)));
-				if (SDreportError(SDsizeBSDF(proja, vout, vin,
-						SDqueryMin+SDqueryMax, bsdf), stderr))
-					continue;
-			} else if (SDreportError(SDsizeBSDF(proja, vin, NULL,
-						SDqueryMin+SDqueryMax, bsdf), stderr))
-					continue;
-			printf("%.4e %.4e\n", proja[0], proja[1]);
-			break;
-		default:
-			Usage(argv[0]);
-			break;
-		}
-		fflush(stdout);			/* in case we're on remote */
-		continue;
-noBSDFerr:
-		fprintf(stderr, "%s: First, use 'L' command to load BSDF\n", argv[0]);
-	}
-	return 0;
-}
+// 		switch (toupper(*cp)) {
+// 		case 'L':			/* load/activate BSDF input */
+// 			cp2 = cp = sskip2(cp, 1);
+// 			if (!*cp)
+// 				break;
+// 			while (*cp) cp++;
+// 			while (isspace(*--cp)) *cp = '\0';
+// 			if (directory)
+// 				sprintf(path, "%s/%s", directory, cp2);
+// 			else
+// 				strcpy(path, cp2);
+// 			if (bsdf)
+// 				SDfreeCache(bsdf);
+// 			bsdf = SDcacheFile(path);
+// 			continue;
+// 		case 'I':			/* report general info. */
+// 			if (!bsdf)
+// 				goto noBSDFerr;
+// 			printf("Material: '%s'\n", bsdf->matn);
+// 			printf("Manufacturer: '%s'\n", bsdf->makr);
+// 			printf("Width, Height, Thickness (m): %.4e, %.4e, %.4e\n",
+// 					bsdf->dim[0], bsdf->dim[1], bsdf->dim[2]);
+// 			if (bsdf->mgf)
+// 				printf("Has geometry: %lu bytes\n",
+// 						(unsigned long)strlen(bsdf->mgf));
+// 			else
+// 				printf("Has geometry: no\n");
+// 			break;
+// 		case 'C':			/* report constant values */
+// 			if (!bsdf)
+// 				goto noBSDFerr;
+// 			if (bsdf->rf)
+// 				printf("Peak front hemispherical reflectance: %.3e\n",
+// 						bsdf->rLambFront.cieY +
+// 						bsdf->rf->maxHemi);
+// 			if (bsdf->rb)
+// 				printf("Peak back hemispherical reflectance: %.3e\n",
+// 						bsdf->rLambBack.cieY +
+// 						bsdf->rb->maxHemi);
+// 			if (bsdf->tf)
+// 				printf("Peak front hemispherical transmittance: %.3e\n",
+// 						bsdf->tLamb.cieY + bsdf->tf->maxHemi);
+// 			if (bsdf->tb)
+// 				printf("Peak back hemispherical transmittance: %.3e\n",
+// 						bsdf->tLamb.cieY + bsdf->tb->maxHemi);
+// 			printXYZ("Diffuse Front Reflectance: ", &bsdf->rLambFront);
+// 			printXYZ("Diffuse Back Reflectance: ", &bsdf->rLambBack);
+// 			printXYZ("Diffuse Transmittance: ", &bsdf->tLamb);
+// 			break;
+// 		case 'Q':			/* query BSDF value */
+// 			if (!bsdf)
+// 				goto noBSDFerr;
+// 			if (!*sskip2(cp,4))
+// 				break;
+// 			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
+// 			vec_from_deg(vout, atof(sskip2(cp,3)), atof(sskip2(cp,4)));
+// 			if (!SDreportError(SDevalBSDF(&val, vout, vin, bsdf), stderr))
+// 				printXYZ("", &val);
+// 			break;
+// 		case 'S':			/* sample BSDF */
+// 			if (!bsdf)
+// 				goto noBSDFerr;
+// 			if (!*sskip2(cp,3))
+// 				break;
+// 			if (toupper(cp[1]) == 'R') {
+// 				sflags &= ~SDsampT;
+// 				++cp;
+// 			} else if (toupper(cp[1]) == 'T') {
+// 				sflags &= ~SDsampR;
+// 				++cp;
+// 			}
+// 			if (toupper(cp[1]) == 'S')
+// 				sflags &= ~SDsampDf;
+// 			else if (toupper(cp[1]) == 'D')
+// 				sflags &= ~SDsampSp;
+// 			i = n = atoi(sskip2(cp,1));
+// 			vec_from_deg(vin, atof(sskip2(cp,2)), atof(sskip2(cp,3)));
+// 			while (i-- > 0) {
+// 				VCOPY(vout, vin);
+// 				if (SDreportError(SDsampBSDF(&val, vout,
+// 						(i+rand()*(1./(RAND_MAX+.5)))/(double)n,
+// 						sflags, bsdf), stderr))
+// 					break;
+// 				printf("%.8f %.8f %.8f ", vout[0], vout[1], vout[2]);
+// 				printXYZ("", &val);
+// 			}
+// 			break;
+// 		case 'H':			/* hemispherical values */
+// 		case 'R':
+// 		case 'T':
+// 			if (!bsdf)
+// 				goto noBSDFerr;
+// 			if (!*sskip2(cp,2))
+// 				break;
+// 			if (toupper(cp[0]) == 'R')
+// 				sflags &= ~SDsampT;
+// 			else if (toupper(cp[0]) == 'T')
+// 				sflags &= ~SDsampR;
+// 			if (toupper(cp[1]) == 'S')
+// 				sflags &= ~SDsampDf;
+// 			else if (toupper(cp[1]) == 'D')
+// 				sflags &= ~SDsampSp;
+// 			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
+// 			printf("%.4e\n", SDdirectHemi(vin, sflags, bsdf));
+// 			break;
+// 		case 'A':			/* resolution in proj. steradians */
+// 			if (!bsdf)
+// 				goto noBSDFerr;
+// 			if (!*sskip2(cp,2))
+// 				break;
+// 			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
+// 			if (*sskip2(cp,4)) {
+// 				vec_from_deg(vout, atof(sskip2(cp,3)), atof(sskip2(cp,4)));
+// 				if (SDreportError(SDsizeBSDF(proja, vout, vin,
+// 						SDqueryMin+SDqueryMax, bsdf), stderr))
+// 					continue;
+// 			} else if (SDreportError(SDsizeBSDF(proja, vin, NULL,
+// 						SDqueryMin+SDqueryMax, bsdf), stderr))
+// 					continue;
+// 			printf("%.4e %.4e\n", proja[0], proja[1]);
+// 			break;
+// 		default:
+// 			Usage(argv[0]);
+// 			break;
+// 		}
+// 		fflush(stdout);			/* in case we're on remote */
+// 		continue;
+// noBSDFerr:
+// 		fprintf(stderr, "%s: First, use 'L' command to load BSDF\n", argv[0]);
+// 	}
+// 	return 0;
+// }
