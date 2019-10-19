@@ -15,6 +15,7 @@ cc -o testBSDF testBSDF.c bsdf*.c fvect.c ccolor.c ezxml.c hilbert.c disk2square
 
 # Tools needed to compile
 - cmake
+- clang
 - python 2.7
 - emscripten (https://emscripten.org/docs/getting_started/downloads.html#platform-notes-installation-instructions-sdk)
 
