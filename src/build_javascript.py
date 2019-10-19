@@ -17,7 +17,7 @@ def system(cmd):
 
 def compilebinaries():
     os.chdir(build_dir)
-    system("emcmake cmake -DCMAKE_CXX_FLAGS=\"-s MODULARIZE=1 -s 'EXPORT_NAME=\\\"radience\\\"'\" ../..")
+    system("emcmake cmake -DCMAKE_CXX_FLAGS=\"-s MODULARIZE=1 -s 'EXPORT_NAME=\\\"radiance\\\"'\" ../..")
     system("make")
     system("make install")
     os.chdir("../..")

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>radiance.js sample</title>
+  </head>
+  <body>
+    <script type="text/javascript" src="radiance.js"></script>
+
+    <script>
+    // load radiance
+    var Module;
+    radiance().then((m) => {
+      Module = m;
+      console.log("radiance loaded!");
+    });
+
+    </script>
+  </body>
+</html>
