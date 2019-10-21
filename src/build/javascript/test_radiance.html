@@ -13,7 +13,8 @@
     var Module;
     radiance().then((m) => {
       Module = m;
-      console.log("radiance loaded!");
+      console.log("radiance loaded! Calling the bsdf function");
+      console.log(m.bsdf(1,2));
     });
 
     </script>
